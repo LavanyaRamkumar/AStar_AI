@@ -1,0 +1,151 @@
+import sys
+file = open('DistanceChart.csv')
+g={}
+reader = csv.reader(file)
+l=next(reader,None)
+l.pop(0)
+#print(l)
+for row in reader:
+    g[row[0]]={}
+    j=1
+    for i in l:
+        if(row[0]!= i):
+            g[row[0]][i]=row[j]
+        j=j+1
+
+
+import speech_recognition as sr
+r=sr.Recognizer()
+with sr.Microphone() as source:
+    print("please tell src -to- dest:")
+    audio=r.listen(source)
+try:
+    st=str(r.recognize_google(audio))
+    array=st.split(' ')
+    src=array[0]
+    dest=array[2]
+    print(src,dest)
+except sr.UnknownValueError:
+    print("Retry")
+    sys.exit()
+except IndexError:
+    print("Retry")
+    sys.exit()
+except sr.RequestError as e:
+    print("Retry".format(e))
+    sys.exit()
+
+y=h[dest]
+heur=y.to_dict()
+#print(heur)
+#print(g)
+#del g[src][dest]
+
+path=[]
+paths=[]
+def f(node,cost,prev,prevnode):
+    if(prevnode==src):
+        return float(cost)+float(heur[node])
+    return float(heur[node])+float(prev)-float(heur[prevnode])+float(cost)
+
+def minimum(arrays):
+    b=[]
+    for i in arrays:
+        b.append(i[0])
+    return min(b) 
+
+def pop(a,m):
+    lis=[]
+    for k,v in a.items():
+        if(v[0]>=m):
+            lis.append(k)
+    for i in list(a.keys()):
+        if(i in lis):
+            a.pop(i)
+un={}
+
+def AStar(node,c,path):
+    #print("ASTAR",node,c,path)
+    a={}
+    for k,v in g[node].items():
+        #print(type(v))
+        co=f(k,v,c,node)
+        #####################print(k,str(co))
+        temp=list(path)
+        if(k not in temp):
+            a[k]=[co,temp]
+    #print("1:",a.values())
+    m=minimum(list(a.values()))
+    #print(a)
+    for ke,va in a.items():
+        if(va[0]==m):
+            got=ke
+            break
+    a.pop(got, None)
+    #un.update(a)
+    for i,j in a.items():
+        if(i not in un.keys()):
+            un[i]=j
+    #print("2:",a)
+    #print("un:",un)
+    path.append(got)
+    if(got==dest):
+        #print("hr")
+        pop(un,m)
+        temp=list(path)
+        paths.append([temp,m])
+        #print(paths)
+        #print(un)
+        if(un):
+            #print("here")
+            for i in list(un.keys()):
+                if(un):
+                    values=un[i]
+                    values[1].append(i)
+                    un.pop(i, None)
+                    #AStar(i,values[0],values[1])
+            return 1
+        else:
+            return 0
+    #print('AStar',got,m,path)
+    AStar(got,m,path)
+    #print(un)
+    return 0
+
+path.append(src)
+AStar(src,0,path)    
+#print(paths)
+least=[]
+
+for i in paths:
+    #print(i)
+    least.append(i[1])
+mini=min(least)
+for i in paths:
+    if(mini==i[1]):
+        writ=list(i[0])
+        print(i[0])   
+wri=[]
+wlat=[]
+wlon=[]
+file = open('LatLon.csv')
+reader = csv.reader(file)
+next(reader,None)
+for row in reader:
+    if(str(row[0]) in writ):
+        wri.append(str(row[0]))
+        wlat.append(str(row[1]))
+        wlon.append(str(row[2]))
+file.close()
+
+file=open("path.txt","w")
+for i in range(0,len(wri)):
+    if(i!=len(wri)-1):
+        file.write(wri[i]+","+wlat[i]+","+wlon[i]+"\n")
+    else:
+        file.write(wri[i]+","+wlat[i]+","+wlon[i])
+file.close()
+
+print('Distance: ',mini) 
+import webbrowser
+webbrowser.open("http://localhost/AI/map.php")
